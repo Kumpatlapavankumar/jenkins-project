@@ -2,58 +2,46 @@ pipeline {
     agent any
 
     environment {
-        COMPOSE_FILE = 'docker-compose.yml'
+        REPO_URL = 'https://github.com/Kumpatlapavankumar/jenkins-project.git'
+        CLONE_DIR = 'php-docker-stack-demo2'
     }
 
     stages {
-        stage('Checkout Code') {
-            steps {
-                git 'https://github.com/Kumpatlapavankumar/jenkins-project.git'  // Replace with your repo
-            }
-        }
-
-        stage('Start Containers') {
-            steps {
-                sh 'docker-compose up -d'
-            }
-        }
-
-        stage('Wait for Services') {
-            steps {
-                echo "Waiting for services to be ready..."
-                sleep time: 15, unit: 'SECONDS'
-            }
-        }
-
-        stage('Run Basic Test') {
+        stage('Clone Repository') {
             steps {
                 script {
-                    // Check if PHP container is responding
-                    def result = sh(script: "curl -s http://localhost | grep -i '<strong>php_docker_table1'", returnStatus: true)
-                    if (result != 0) {
-                        error("PHP page not responding or database not connected properly")
+                    sh "git clone ${REPO_URL} ${CLONE_DIR}"
+                }
+            }
+        }
+
+        stage('Run Docker Compose') {
+            steps {
+                dir("${CLONE_DIR}") {
+                    script {
+                        sh 'docker-compose up --build -d'
                     }
                 }
             }
         }
 
-        stage('Run Hello Test') {
+        stage('Check Docker Logs') {
             steps {
-                sh "curl -s http://localhost/test.php | grep 'Hello World!'"
-            }
-        }
-
-        stage('Stop Containers') {
-            steps {
-                sh 'docker-compose down'
+                dir("${CLONE_DIR}") {
+                    script {
+                        sh 'docker-compose logs -f'
+                    }
+                }
             }
         }
     }
 
     post {
-        always {
-            echo "Cleaning up..."
-            sh 'docker-compose down -v || true'
+        success {
+            echo '✅ App deployed successfully.'
+        }
+        failure {
+            echo '❌ Deployment failed.'
         }
     }
 }

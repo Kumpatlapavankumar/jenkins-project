@@ -1,14 +1,14 @@
 version: '3'
 services:
   www:
-    image: php:apache  # Use 'image' instead of 'images'
+    build: .  # Build using Dockerfile
     volumes:
       - "./:/var/www/html"
     ports:
-      - 80:80
-      - 443:443
+      - 8081:80
+
   db:
-    image: mysql:latest  # Corrected from 'images' to 'image'
+    image: mysql:latest
     environment:
       - MYSQL_DATABASE=php_docker
       - MYSQL_USER=php_docker
@@ -16,6 +16,7 @@ services:
       - MYSQL_ALLOW_EMPTY_PASSWORD=1
     volumes:
       - "./db:/docker-entrypoint-initdb.d"
+
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
     ports:
